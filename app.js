@@ -11,6 +11,8 @@ const secretKey = "JNfdjnfUAHFUuohn3oR*@$O@$fb";
 app.use(express.json());
 app.use(cors());
 
+// LOGIN
+
 app.post("/login", (req, res) => {
   if (req.method === "POST") {
     const email = "testuser@gmail.com";
@@ -41,6 +43,8 @@ app.post("/login", (req, res) => {
   }
 });
 
+// GET CHARACTERS
+
 app.get("/characters", async (req, res) => {
   const authorizationToken = req.headers["authorization"];
 
@@ -55,7 +59,6 @@ app.get("/characters", async (req, res) => {
     return;
   }
 
-  let payload;
   try {
     JWT.verify(token, secretKey);
   } catch (error) {
@@ -89,6 +92,64 @@ app.get("/characters", async (req, res) => {
         eyeColor: eye_color,
         birthYear: birth_year,
         gender,
+      };
+    });
+
+    res.status(200).json({
+      data,
+    });
+  } else if (err) {
+    res.status(401).json({ error: "Data request error" });
+  }
+});
+
+// GET PLANETS
+
+app.get("/planets", async (req, res) => {
+  const authorizationToken = req.headers["authorization"];
+
+  if (!authorizationToken) {
+    res.status(401).json({ error: "No authorization header" });
+    return;
+  }
+
+  const token = authorizationToken.split("Bearer ")[1];
+  if (!token) {
+    res.status(401).json({ error: "Wrong authorization payload" });
+    return;
+  }
+
+  try {
+    JWT.verify(token, secretKey);
+  } catch (error) {
+    res.status(401).json({ error: "Wrong JWT token" });
+    return;
+  }
+
+  const [err, axiosResponse] = await to(
+    axios.get("https://swapi.dev/api/planets")
+  );
+
+  if (axiosResponse) {
+    const data = axiosResponse.data.results.map((item) => {
+      const {
+        name,
+        rotation_period,
+        orbital_period,
+        diameter,
+        climate,
+        gravity,
+        terrain,
+      } = item;
+
+      return {
+        name,
+        diameter,
+        climate,
+        gravity,
+        terrain,
+        rotationPeriod: rotation_period,
+        orbitalPeriod: orbital_period,
       };
     });
 
